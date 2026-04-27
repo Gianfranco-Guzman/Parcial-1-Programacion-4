@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, SQLModel, create_engine
 
 from backend.app.Core.config import obtener_configuracion
+from backend.app.Core.unit_of_work import UnidadDeTrabajo
 
 
 configuracion = obtener_configuracion()
@@ -39,6 +40,11 @@ def crear_tablas() -> None:
 def obtener_sesion() -> Generator[Session, None, None]:
     with Session(obtener_motor()) as sesion:
         yield sesion
+
+
+def obtener_unidad_trabajo() -> Generator[UnidadDeTrabajo, None, None]:
+    with UnidadDeTrabajo() as unidad:
+        yield unidad
 
 
 def probar_conexion_base_de_datos() -> tuple[bool, str]:

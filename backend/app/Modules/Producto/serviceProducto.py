@@ -1,12 +1,13 @@
 from datetime import datetime
 
 from sqlalchemy.orm import selectinload
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from backend.app.Core import (
     ConflictoDeNegocioError,
     RecursoNoEncontradoError,
     RepositorioBase,
+    UnidadDeTrabajo,
     ValidacionDeServicioError,
 )
 from backend.app.Modules.Categoria.categoriaModel import Categoria
@@ -27,7 +28,7 @@ class ServicioProducto:
 
     def listar(
         self,
-        sesion: Session,
+        unidad_trabajo: UnidadDeTrabajo,
         offset: int = 0,
         limite: int = 100,
         nombre: str | None = None,
@@ -50,34 +51,34 @@ class ServicioProducto:
             consulta = consulta.where(Producto.stock >= stock_minimo)
 
         consulta = consulta.offset(offset).limit(limite)
-        return list(sesion.exec(consulta).all())
+        return list(unidad_trabajo.sesion.exec(consulta).all())
 
-    def obtener_por_id(self, sesion: Session, id_producto: int) -> Producto:
+    def obtener_por_id(self, unidad_trabajo: UnidadDeTrabajo, id_producto: int) -> Producto:
         consulta = (
             select(Producto)
             .where(Producto.id == id_producto)
             .options(selectinload(Producto.categorias))
             .options(selectinload(Producto.relaciones_ingrediente).selectinload(ProductoIngrediente.ingrediente))
         )
-        producto = sesion.exec(consulta).first()
+        producto = unidad_trabajo.sesion.exec(consulta).first()
         if producto is None:
             raise RecursoNoEncontradoError("El producto solicitado no existe")
         return producto
 
-    def crear(self, sesion: Session, datos_producto: ProductoCrear) -> Producto:
+    def crear(self, unidad_trabajo: UnidadDeTrabajo, datos_producto: ProductoCrear) -> Producto:
         ids_categorias = self._normalizar_ids_categorias(datos_producto.ids_categorias)
         ingredientes_asociados = self._normalizar_ingredientes(datos_producto.ingredientes)
 
-        categorias = self._obtener_categorias_por_ids(sesion, ids_categorias)
+        categorias = self._obtener_categorias_por_ids(unidad_trabajo, ids_categorias)
         ingredientes = self._obtener_ingredientes_por_ids(
-            sesion,
+            unidad_trabajo,
             [ingrediente.id_ingrediente for ingrediente in ingredientes_asociados],
         )
 
         datos_base = datos_producto.model_dump(exclude={"ids_categorias", "ingredientes"})
         producto = Producto(**datos_base)
 
-        self.repositorio.crear(sesion, producto)
+        self.repositorio.crear(unidad_trabajo.sesion, producto)
         producto.relaciones_categoria = self._construir_relaciones_categoria(categorias, producto.id)
         producto.relaciones_ingrediente = self._construir_relaciones_ingrediente(
             ingredientes,
@@ -85,19 +86,18 @@ class ServicioProducto:
             producto.id,
         )
 
-        sesion.add(producto)
-        sesion.commit()
-        return self.obtener_por_id(sesion, producto.id)
+        unidad_trabajo.sesion.add(producto)
+        return self.obtener_por_id(unidad_trabajo, producto.id)
 
-    def actualizar(self, sesion: Session, id_producto: int, datos_producto: ProductoActualizar) -> Producto:
-        producto = self.obtener_por_id(sesion, id_producto)
+    def actualizar(self, unidad_trabajo: UnidadDeTrabajo, id_producto: int, datos_producto: ProductoActualizar) -> Producto:
+        producto = self.obtener_por_id(unidad_trabajo, id_producto)
         datos_actualizacion = datos_producto.model_dump(exclude_unset=True)
 
         if "ids_categorias" in datos_actualizacion:
             ids_categorias = self._normalizar_ids_categorias(datos_actualizacion["ids_categorias"] or [])
-            categorias = self._obtener_categorias_por_ids(sesion, ids_categorias)
+            categorias = self._obtener_categorias_por_ids(unidad_trabajo, ids_categorias)
             producto.relaciones_categoria.clear()
-            sesion.flush()
+            unidad_trabajo.sesion.flush()
             producto.relaciones_categoria = self._construir_relaciones_categoria(categorias, producto.id)
 
         if "ingredientes" in datos_actualizacion:
@@ -105,11 +105,11 @@ class ServicioProducto:
                 datos_producto.ingredientes or []
             )
             ingredientes = self._obtener_ingredientes_por_ids(
-                sesion,
+                unidad_trabajo,
                 [ingrediente.id_ingrediente for ingrediente in ingredientes_asociados],
             )
             producto.relaciones_ingrediente.clear()
-            sesion.flush()
+            unidad_trabajo.sesion.flush()
             producto.relaciones_ingrediente = self._construir_relaciones_ingrediente(
                 ingredientes,
                 ingredientes_asociados,
@@ -122,14 +122,12 @@ class ServicioProducto:
             setattr(producto, campo, valor)
 
         producto.fecha_actualizacion = datetime.utcnow()
-        sesion.add(producto)
-        sesion.commit()
-        return self.obtener_por_id(sesion, producto.id)
+        unidad_trabajo.sesion.add(producto)
+        return self.obtener_por_id(unidad_trabajo, producto.id)
 
-    def eliminar(self, sesion: Session, id_producto: int) -> None:
-        producto = self.obtener_por_id(sesion, id_producto)
-        self.repositorio.eliminar(sesion, producto)
-        sesion.commit()
+    def eliminar(self, unidad_trabajo: UnidadDeTrabajo, id_producto: int) -> None:
+        producto = self.obtener_por_id(unidad_trabajo, id_producto)
+        self.repositorio.eliminar(unidad_trabajo.sesion, producto)
 
     def _normalizar_ids_categorias(self, ids_categorias: list[int]) -> list[int]:
         ids_normalizados = list(dict.fromkeys(ids_categorias))
@@ -155,12 +153,12 @@ class ServicioProducto:
     ) -> list[IngredienteAsociadoCrear]:
         return self._normalizar_ingredientes(ingredientes)
 
-    def _obtener_categorias_por_ids(self, sesion: Session, ids_categorias: list[int]) -> list[Categoria]:
+    def _obtener_categorias_por_ids(self, unidad_trabajo: UnidadDeTrabajo, ids_categorias: list[int]) -> list[Categoria]:
         if not ids_categorias:
             return []
 
         consulta = select(Categoria).where(Categoria.id.in_(ids_categorias))
-        categorias = list(sesion.exec(consulta).all())
+        categorias = list(unidad_trabajo.sesion.exec(consulta).all())
         ids_encontrados = {categoria.id for categoria in categorias}
         ids_faltantes = [identificador for identificador in ids_categorias if identificador not in ids_encontrados]
 
@@ -172,12 +170,12 @@ class ServicioProducto:
         categorias_por_id = {categoria.id: categoria for categoria in categorias}
         return [categorias_por_id[identificador] for identificador in ids_categorias]
 
-    def _obtener_ingredientes_por_ids(self, sesion: Session, ids_ingredientes: list[int]) -> list[Ingrediente]:
+    def _obtener_ingredientes_por_ids(self, unidad_trabajo: UnidadDeTrabajo, ids_ingredientes: list[int]) -> list[Ingrediente]:
         if not ids_ingredientes:
             return []
 
         consulta = select(Ingrediente).where(Ingrediente.id.in_(ids_ingredientes))
-        ingredientes = list(sesion.exec(consulta).all())
+        ingredientes = list(unidad_trabajo.sesion.exec(consulta).all())
         ids_encontrados = {ingrediente.id for ingrediente in ingredientes}
         ids_faltantes = [identificador for identificador in ids_ingredientes if identificador not in ids_encontrados]
 

@@ -1,13 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
-from sqlmodel import Session
 
 from backend.app.Core import (
     ConflictoDeNegocioError,
     RecursoNoEncontradoError,
+    UnidadDeTrabajo,
     ValidacionDeServicioError,
-    obtener_sesion,
+    obtener_unidad_trabajo,
 )
 from backend.app.Modules.Producto.productoSchema import (
     ProductoActualizar,
@@ -23,10 +23,10 @@ router = APIRouter(prefix="/productos", tags=["Productos"])
 @router.post("", response_model=ProductoRespuestaRelacional, status_code=status.HTTP_201_CREATED)
 def crear_producto(
     datos_producto: ProductoCrear,
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> ProductoRespuestaRelacional:
     try:
-        return servicio_producto.crear(sesion, datos_producto)
+        return servicio_producto.crear(unidad_trabajo, datos_producto)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ConflictoDeNegocioError as error:
@@ -42,10 +42,10 @@ def listar_productos(
     nombre: Annotated[str | None, Query(min_length=1, max_length=120, description="Filtro parcial por nombre")] = None,
     activo: Annotated[bool | None, Query(description="Filtra por estado activo/inactivo")] = None,
     stock_minimo: Annotated[int | None, Query(ge=0, description="Filtra por stock mínimo")] = None,
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> list[ProductoRespuestaRelacional]:
     return servicio_producto.listar(
-        sesion,
+        unidad_trabajo,
         offset=offset,
         limite=limite,
         nombre=nombre,
@@ -57,10 +57,10 @@ def listar_productos(
 @router.get("/{id_producto}", response_model=ProductoRespuestaRelacional, status_code=status.HTTP_200_OK)
 def obtener_producto(
     id_producto: Annotated[int, Path(gt=0, description="Identificador positivo del producto")],
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> ProductoRespuestaRelacional:
     try:
-        return servicio_producto.obtener_por_id(sesion, id_producto)
+        return servicio_producto.obtener_por_id(unidad_trabajo, id_producto)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ConflictoDeNegocioError as error:
@@ -73,10 +73,10 @@ def obtener_producto(
 def actualizar_producto(
     id_producto: Annotated[int, Path(gt=0, description="Identificador positivo del producto")],
     datos_producto: ProductoActualizar,
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> ProductoRespuestaRelacional:
     try:
-        return servicio_producto.actualizar(sesion, id_producto, datos_producto)
+        return servicio_producto.actualizar(unidad_trabajo, id_producto, datos_producto)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ConflictoDeNegocioError as error:
@@ -88,10 +88,10 @@ def actualizar_producto(
 @router.delete("/{id_producto}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_producto(
     id_producto: Annotated[int, Path(gt=0, description="Identificador positivo del producto")],
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> Response:
     try:
-        servicio_producto.eliminar(sesion, id_producto)
+        servicio_producto.eliminar(unidad_trabajo, id_producto)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

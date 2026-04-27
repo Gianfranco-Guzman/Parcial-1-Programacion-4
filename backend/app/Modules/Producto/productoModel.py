@@ -21,7 +21,7 @@ class Producto(SQLModel, table=True):
     activo: bool = Field(default=True)
     fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
     fecha_actualizacion: datetime = Field(default_factory=datetime.utcnow)
-
+    # fecha_eliminacion:
     relaciones_categoria: List[ProductoCategoria] = Relationship(
         back_populates="producto",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},    #sirve para las tablas intermedias, cascade

@@ -15,7 +15,11 @@ class Categoria(SQLModel, table=True):
     nombre: str = Field(index=True, unique=True, min_length=2, max_length=120)
     descripcion: Optional[str] = Field(default=None, max_length=300)
     activo: bool = Field(default=True)
+    # imagen url
     fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    # parent ir. Relacion reflexiva para categorias hijas
+    # fecha update
+    # fecha delete
 
     relaciones_producto: List[ProductoCategoria] = Relationship(
         back_populates="categoria",

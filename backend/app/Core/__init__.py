@@ -3,6 +3,7 @@ from backend.app.Core.database import (
     crear_tablas,
     obtener_motor,
     obtener_sesion,
+    obtener_unidad_trabajo,
     probar_conexion_base_de_datos,
 )
 from backend.app.Core.excepciones import (
@@ -26,5 +27,6 @@ __all__ = [
     "obtener_configuracion",
     "obtener_motor",
     "obtener_sesion",
+    "obtener_unidad_trabajo",
     "probar_conexion_base_de_datos",
 ]

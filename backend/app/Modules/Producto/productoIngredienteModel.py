@@ -13,6 +13,7 @@ class ProductoIngrediente(SQLModel, table=True):
     ingrediente_id: int = Field(foreign_key="ingrediente.id", primary_key=True)
     cantidad: float = Field(default=1.0, gt=0)
 
+    # es removible
     producto: Optional["Producto"] = Relationship(
         back_populates="relaciones_ingrediente",
         sa_relationship_kwargs={"overlaps": "ingredientes,productos,relaciones_producto"},          #sirve para las tablas intermedias

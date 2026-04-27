@@ -24,4 +24,4 @@ class RepositorioBase(Generic[TipoModelo]):
         return entidad
 
     def eliminar(self, sesion: Session, entidad: TipoModelo) -> None:
-        sesion.delete(entidad)
+        sesion.delete(entidad)  # pasar a borrado logico

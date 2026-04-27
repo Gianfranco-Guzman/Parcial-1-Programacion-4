@@ -1,13 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
-from sqlmodel import Session
 
 from backend.app.Core import (
     ConflictoDeNegocioError,
     RecursoNoEncontradoError,
+    UnidadDeTrabajo,
     ValidacionDeServicioError,
-    obtener_sesion,
+    obtener_unidad_trabajo,
 )
 from backend.app.Modules.Ingrediente.ingredienteSchema import (
     IngredienteActualizar,
@@ -23,10 +23,10 @@ router = APIRouter(prefix="/ingredientes", tags=["Ingredientes"])
 @router.post("", response_model=IngredienteRespuesta, status_code=status.HTTP_201_CREATED)
 def crear_ingrediente(
     datos_ingrediente: IngredienteCrear,
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> IngredienteRespuesta:
     try:
-        return servicio_ingrediente.crear(sesion, datos_ingrediente)
+        return servicio_ingrediente.crear(unidad_trabajo, datos_ingrediente)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ConflictoDeNegocioError as error:
@@ -42,10 +42,10 @@ def listar_ingredientes(
     nombre: Annotated[str | None, Query(min_length=1, max_length=120, description="Filtro parcial por nombre")] = None,
     activo: Annotated[bool | None, Query(description="Filtra por estado activo/inactivo")] = None,
     calorias_minimas: Annotated[float | None, Query(ge=0, description="Filtra por calorías mínimas")] = None,
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> list[IngredienteRespuesta]:
     return servicio_ingrediente.listar(
-        sesion,
+        unidad_trabajo,
         offset=offset,
         limite=limite,
         nombre=nombre,
@@ -57,10 +57,10 @@ def listar_ingredientes(
 @router.get("/{id_ingrediente}", response_model=IngredienteRespuesta, status_code=status.HTTP_200_OK)
 def obtener_ingrediente(
     id_ingrediente: Annotated[int, Path(gt=0, description="Identificador positivo del ingrediente")],
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> IngredienteRespuesta:
     try:
-        return servicio_ingrediente.obtener_por_id(sesion, id_ingrediente)
+        return servicio_ingrediente.obtener_por_id(unidad_trabajo, id_ingrediente)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ConflictoDeNegocioError as error:
@@ -73,10 +73,10 @@ def obtener_ingrediente(
 def actualizar_ingrediente(
     id_ingrediente: Annotated[int, Path(gt=0, description="Identificador positivo del ingrediente")],
     datos_ingrediente: IngredienteActualizar,
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> IngredienteRespuesta:
     try:
-        return servicio_ingrediente.actualizar(sesion, id_ingrediente, datos_ingrediente)
+        return servicio_ingrediente.actualizar(unidad_trabajo, id_ingrediente, datos_ingrediente)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ConflictoDeNegocioError as error:
@@ -88,10 +88,10 @@ def actualizar_ingrediente(
 @router.delete("/{id_ingrediente}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_ingrediente(
     id_ingrediente: Annotated[int, Path(gt=0, description="Identificador positivo del ingrediente")],
-    sesion: Session = Depends(obtener_sesion),
+    unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> Response:
     try:
-        servicio_ingrediente.eliminar(sesion, id_ingrediente)
+        servicio_ingrediente.eliminar(unidad_trabajo, id_ingrediente)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except RecursoNoEncontradoError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
