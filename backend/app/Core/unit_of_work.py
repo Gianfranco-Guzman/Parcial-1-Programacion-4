@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlmodel import Session
 
-from backend.app.Core.database import obtener_motor
+
 
 
 class UnidadDeTrabajo:
@@ -10,6 +10,9 @@ class UnidadDeTrabajo:
         self.sesion: Session | None = None
 
     def __enter__(self) -> "UnidadDeTrabajo":
+        # Import here to avoid circular import at module load time
+        from backend.app.Core.database import obtener_motor
+
         self.sesion = Session(obtener_motor())
         return self
 

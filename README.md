@@ -213,3 +213,12 @@ Agregar acá el link al video cuando esté disponible:
 ```text
 PENDIENTE
 ```
+
+---
+
+## Cambios y diagnóstico local
+
+- Se corrigió un import circular entre `Core.database` y `Core.unit_of_work`: se movió la importación de `obtener_motor` para hacerse dentro de `UnidadDeTrabajo.__enter__` y se ajustaron imports en `backend/main.py` para evitar ejecutar `Core.__init__` durante el arranque.
+- Se detectó un problema de autenticación al arrancar Uvicorn porque `URL_BASE_DE_DATOS` en el entorno estaba apuntando a una URL con la contraseña antigua (`postgres`). Solución: actualizar `URL_BASE_DE_DATOS` a la URL correcta o eliminarla para que la app use las variables individuales definidas en el `.env` (por ejemplo `CONTRASENA_BASE_DE_DATOS=admin123`).
+
+Estas notas son cambios locales para facilitar el arranque en desarrollo y dejar trazabilidad de la depuración.

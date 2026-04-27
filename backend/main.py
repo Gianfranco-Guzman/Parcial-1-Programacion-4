@@ -3,13 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.Core import crear_tablas, obtener_configuracion
+from backend.app.Core.config import obtener_configuracion
+from backend.app.Core.database import crear_tablas
 from backend.app.Modules.Categoria.categoriaRouter import router as router_categoria
 from backend.app.Modules.Ingrediente.ingredienteRouter import router as router_ingrediente
 from backend.app.Modules.Producto.productoRouter import router as router_producto
 
 
 configuracion = obtener_configuracion()
+
 
 
 @asynccontextmanager
