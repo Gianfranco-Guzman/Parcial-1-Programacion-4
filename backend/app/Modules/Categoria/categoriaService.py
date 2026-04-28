@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlmodel import select
 
 from backend.app.Core import ConflictoDeNegocioError, RecursoNoEncontradoError, RepositorioBase, UnidadDeTrabajo
@@ -17,7 +19,7 @@ class ServicioCategoria:
         nombre: str | None = None,
         activo: bool | None = None,
     ) -> list[Categoria]:
-        consulta = select(Categoria)
+        consulta = select(Categoria).where(Categoria.fecha_eliminacion == None)  # noqa: E711
 
         if nombre:
             consulta = consulta.where(Categoria.nombre.ilike(f"%{nombre}%"))
@@ -30,7 +32,7 @@ class ServicioCategoria:
 
     def obtener_por_id(self, unidad_trabajo: UnidadDeTrabajo, id_categoria: int) -> Categoria:
         categoria = self.repositorio.obtener_por_id(unidad_trabajo.sesion, id_categoria)
-        if categoria is None:
+        if categoria is None or categoria.fecha_eliminacion is not None:
             raise RecursoNoEncontradoError("La categoría solicitada no existe")
         return categoria
 
@@ -52,6 +54,7 @@ class ServicioCategoria:
         for campo, valor in datos_actualizacion.items():
             setattr(categoria, campo, valor)
 
+        categoria.fecha_actualizacion = datetime.utcnow()
         unidad_trabajo.sesion.add(categoria)
         unidad_trabajo.sesion.refresh(categoria)
         return categoria
@@ -61,7 +64,7 @@ class ServicioCategoria:
         self.repositorio.eliminar(unidad_trabajo.sesion, categoria)
 
     def _validar_nombre_unico(self, unidad_trabajo: UnidadDeTrabajo, nombre: str, id_categoria_actual: int | None = None) -> None:
-        consulta = select(Categoria).where(Categoria.nombre == nombre)
+        consulta = select(Categoria).where(Categoria.nombre == nombre).where(Categoria.fecha_eliminacion == None)  # noqa: E711
         categoria_existente = unidad_trabajo.sesion.exec(consulta).first()
 
         if categoria_existente is None:

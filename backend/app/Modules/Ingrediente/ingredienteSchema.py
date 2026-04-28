@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class IngredienteBase(BaseModel):
     nombre: str = Field(min_length=2, max_length=120)
     descripcion: str | None = Field(default=None, max_length=300)
+    es_alergeno: bool = False
     calorias_por_unidad: float = Field(default=0, ge=0)
     activo: bool = True
 
@@ -17,6 +18,7 @@ class IngredienteCrear(IngredienteBase):
 class IngredienteActualizar(BaseModel):
     nombre: str | None = Field(default=None, min_length=2, max_length=120)
     descripcion: str | None = Field(default=None, max_length=300)
+    es_alergeno: bool | None = None
     calorias_por_unidad: float | None = Field(default=None, ge=0)
     activo: bool | None = None
 
@@ -33,6 +35,7 @@ class IngredienteRespuesta(IngredienteBase):
 
     id: int
     fecha_creacion: datetime
+    fecha_actualizacion: datetime
 
 
 class IngredienteProductoDetalle(IngredienteRespuesta):

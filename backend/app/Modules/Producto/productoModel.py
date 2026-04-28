@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
+from sqlalchemy import Column, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import Field, Relationship, SQLModel
 
 from backend.app.Modules.Producto.productoCategoriaModel import ProductoCategoria
@@ -16,12 +18,13 @@ class Producto(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nombre: str = Field(index=True, min_length=2, max_length=120)
     descripcion: Optional[str] = Field(default=None, max_length=500)
-    precio: float = Field(gt=0)
-    stock: int = Field(default=0, ge=0)
-    activo: bool = Field(default=True)
+    precio_base: float = Field(ge=0)
+    imagenes_url: Optional[List[str]] = Field(default=None, sa_column=Column(ARRAY(String), nullable=True))
+    stock_cantidad: int = Field(default=0, ge=0)
+    disponible: bool = Field(default=True)
     fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
     fecha_actualizacion: datetime = Field(default_factory=datetime.utcnow)
-    # fecha_eliminacion:
+    fecha_eliminacion: Optional[datetime] = Field(default=None)
     relaciones_categoria: List[ProductoCategoria] = Relationship(
         back_populates="producto",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},    #sirve para las tablas intermedias, cascade

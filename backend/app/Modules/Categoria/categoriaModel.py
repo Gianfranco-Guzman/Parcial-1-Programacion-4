@@ -14,12 +14,28 @@ class Categoria(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nombre: str = Field(index=True, unique=True, min_length=2, max_length=120)
     descripcion: Optional[str] = Field(default=None, max_length=300)
+    imagen_url: Optional[str] = Field(default=None, max_length=500)
     activo: bool = Field(default=True)
-    # imagen url
     fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
-    # parent ir. Relacion reflexiva para categorias hijas
-    # fecha update
-    # fecha delete
+    fecha_actualizacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_eliminacion: Optional[datetime] = Field(default=None)
+    categoria_padre_id: Optional[int] = Field(default=None, foreign_key="categoria.id")
+
+    subcategorias: List["Categoria"] = Relationship(
+        back_populates="categoria_padre",
+        sa_relationship_kwargs={
+            "foreign_keys": "[Categoria.categoria_padre_id]",
+            "lazy": "select",
+        },
+    )
+    categoria_padre: Optional["Categoria"] = Relationship(
+        back_populates="subcategorias",
+        sa_relationship_kwargs={
+            "foreign_keys": "[Categoria.categoria_padre_id]",
+            "remote_side": "[Categoria.id]",
+            "lazy": "select",
+        },
+    )
 
     relaciones_producto: List[ProductoCategoria] = Relationship(
         back_populates="categoria",

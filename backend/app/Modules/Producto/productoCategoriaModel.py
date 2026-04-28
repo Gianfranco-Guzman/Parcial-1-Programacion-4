@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -8,12 +9,11 @@ if TYPE_CHECKING:
 
 
 class ProductoCategoria(SQLModel, table=True):
-    
+
     producto_id: int = Field(foreign_key="producto.id", primary_key=True)
     categoria_id: int = Field(foreign_key="categoria.id", primary_key=True)
-
-    # es princioal
-    # auditoria
+    es_principal: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     producto: Optional["Producto"] = Relationship(
         back_populates="relaciones_categoria",

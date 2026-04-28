@@ -13,9 +13,10 @@ from backend.app.Modules.Ingrediente.ingredienteSchema import (
 class ProductoBase(BaseModel):
     nombre: str = Field(min_length=2, max_length=120)
     descripcion: str | None = Field(default=None, max_length=500)
-    precio: float = Field(gt=0)
-    stock: int = Field(default=0, ge=0)
-    activo: bool = True
+    precio_base: float = Field(ge=0)
+    imagenes_url: list[str] | None = None
+    stock_cantidad: int = Field(default=0, ge=0)
+    disponible: bool = True
 
 
 class ProductoCrear(ProductoBase):
@@ -26,9 +27,10 @@ class ProductoCrear(ProductoBase):
 class ProductoActualizar(BaseModel):
     nombre: str | None = Field(default=None, min_length=2, max_length=120)
     descripcion: str | None = Field(default=None, max_length=500)
-    precio: float | None = Field(default=None, gt=0)
-    stock: int | None = Field(default=None, ge=0)
-    activo: bool | None = None
+    precio_base: float | None = Field(default=None, ge=0)
+    imagenes_url: list[str] | None = None
+    stock_cantidad: int | None = Field(default=None, ge=0)
+    disponible: bool | None = None
     ids_categorias: list[int] | None = None
     ingredientes: list["IngredienteAsociadoCrear"] | None = None
 
@@ -62,6 +64,7 @@ class RelacionProductoIngredienteRespuesta(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     cantidad: float
+    es_removible: bool
     ingrediente: IngredienteSimple
 
 

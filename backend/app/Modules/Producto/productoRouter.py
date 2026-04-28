@@ -40,7 +40,7 @@ def listar_productos(
     offset: Annotated[int, Query(ge=0, description="Cantidad de registros a omitir")] = 0,
     limite: Annotated[int, Query(ge=1, le=100, description="Cantidad máxima de resultados")] = 20,
     nombre: Annotated[str | None, Query(min_length=1, max_length=120, description="Filtro parcial por nombre")] = None,
-    activo: Annotated[bool | None, Query(description="Filtra por estado activo/inactivo")] = None,
+    disponible: Annotated[bool | None, Query(description="Filtra por disponibilidad")] = None,
     stock_minimo: Annotated[int | None, Query(ge=0, description="Filtra por stock mínimo")] = None,
     unidad_trabajo: UnidadDeTrabajo = Depends(obtener_unidad_trabajo),
 ) -> list[ProductoRespuestaRelacional]:
@@ -49,7 +49,7 @@ def listar_productos(
         offset=offset,
         limite=limite,
         nombre=nombre,
-        activo=activo,
+        disponible=disponible,
         stock_minimo=stock_minimo,
     )
 

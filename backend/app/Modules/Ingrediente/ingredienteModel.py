@@ -15,8 +15,11 @@ class Ingrediente(SQLModel, table=True):
     nombre: str = Field(index=True, unique=True, min_length=2, max_length=120)
     descripcion: Optional[str] = Field(default=None, max_length=300)
     calorias_por_unidad: float = Field(default=0, ge=0)
+    es_alergeno: bool = Field(default=False)
     activo: bool = Field(default=True)
     fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_actualizacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_eliminacion: Optional[datetime] = Field(default=None)
 
     relaciones_producto: List[ProductoIngrediente] = Relationship(
         back_populates="ingrediente",

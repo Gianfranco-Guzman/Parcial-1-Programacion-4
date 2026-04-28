@@ -32,11 +32,12 @@ class ServicioProducto:
         offset: int = 0,
         limite: int = 100,
         nombre: str | None = None,
-        activo: bool | None = None,
+        disponible: bool | None = None,
         stock_minimo: int | None = None,
     ) -> list[Producto]:
         consulta = (
             select(Producto)
+            .where(Producto.fecha_eliminacion == None)  # noqa: E711
             .options(selectinload(Producto.categorias))
             .options(selectinload(Producto.relaciones_ingrediente).selectinload(ProductoIngrediente.ingrediente))
         )
@@ -44,11 +45,11 @@ class ServicioProducto:
         if nombre:
             consulta = consulta.where(Producto.nombre.ilike(f"%{nombre}%"))
 
-        if activo is not None:
-            consulta = consulta.where(Producto.activo == activo)
+        if disponible is not None:
+            consulta = consulta.where(Producto.disponible == disponible)
 
         if stock_minimo is not None:
-            consulta = consulta.where(Producto.stock >= stock_minimo)
+            consulta = consulta.where(Producto.stock_cantidad >= stock_minimo)
 
         consulta = consulta.offset(offset).limit(limite)
         return list(unidad_trabajo.sesion.exec(consulta).all())
@@ -57,6 +58,7 @@ class ServicioProducto:
         consulta = (
             select(Producto)
             .where(Producto.id == id_producto)
+            .where(Producto.fecha_eliminacion == None)  # noqa: E711
             .options(selectinload(Producto.categorias))
             .options(selectinload(Producto.relaciones_ingrediente).selectinload(ProductoIngrediente.ingrediente))
         )
@@ -157,7 +159,7 @@ class ServicioProducto:
         if not ids_categorias:
             return []
 
-        consulta = select(Categoria).where(Categoria.id.in_(ids_categorias))
+        consulta = select(Categoria).where(Categoria.id.in_(ids_categorias)).where(Categoria.fecha_eliminacion == None)  # noqa: E711
         categorias = list(unidad_trabajo.sesion.exec(consulta).all())
         ids_encontrados = {categoria.id for categoria in categorias}
         ids_faltantes = [identificador for identificador in ids_categorias if identificador not in ids_encontrados]
@@ -174,7 +176,7 @@ class ServicioProducto:
         if not ids_ingredientes:
             return []
 
-        consulta = select(Ingrediente).where(Ingrediente.id.in_(ids_ingredientes))
+        consulta = select(Ingrediente).where(Ingrediente.id.in_(ids_ingredientes)).where(Ingrediente.fecha_eliminacion == None)  # noqa: E711
         ingredientes = list(unidad_trabajo.sesion.exec(consulta).all())
         ids_encontrados = {ingrediente.id for ingrediente in ingredientes}
         ids_faltantes = [identificador for identificador in ids_ingredientes if identificador not in ids_encontrados]

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Generic, TypeVar
 
 from sqlmodel import Session, SQLModel, select
@@ -24,4 +25,9 @@ class RepositorioBase(Generic[TipoModelo]):
         return entidad
 
     def eliminar(self, sesion: Session, entidad: TipoModelo) -> None:
-        sesion.delete(entidad)  # pasar a borrado logico
+        if hasattr(entidad, "fecha_eliminacion"):
+            entidad.fecha_eliminacion = datetime.utcnow()  # type: ignore[attr-defined]
+            sesion.add(entidad)
+            sesion.flush()
+        else:
+            sesion.delete(entidad)

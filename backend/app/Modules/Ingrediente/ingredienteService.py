@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlmodel import select
 
 from backend.app.Core import ConflictoDeNegocioError, RecursoNoEncontradoError, RepositorioBase, UnidadDeTrabajo
@@ -18,7 +20,7 @@ class ServicioIngrediente:
         activo: bool | None = None,
         calorias_minimas: float | None = None,
     ) -> list[Ingrediente]:
-        consulta = select(Ingrediente)
+        consulta = select(Ingrediente).where(Ingrediente.fecha_eliminacion == None)  # noqa: E711
 
         if nombre:
             consulta = consulta.where(Ingrediente.nombre.ilike(f"%{nombre}%"))
@@ -34,7 +36,7 @@ class ServicioIngrediente:
 
     def obtener_por_id(self, unidad_trabajo: UnidadDeTrabajo, id_ingrediente: int) -> Ingrediente:
         ingrediente = self.repositorio.obtener_por_id(unidad_trabajo.sesion, id_ingrediente)
-        if ingrediente is None:
+        if ingrediente is None or ingrediente.fecha_eliminacion is not None:
             raise RecursoNoEncontradoError("El ingrediente solicitado no existe")
         return ingrediente
 
@@ -56,6 +58,7 @@ class ServicioIngrediente:
         for campo, valor in datos_actualizacion.items():
             setattr(ingrediente, campo, valor)
 
+        ingrediente.fecha_actualizacion = datetime.utcnow()
         unidad_trabajo.sesion.add(ingrediente)
         unidad_trabajo.sesion.refresh(ingrediente)
         return ingrediente
@@ -65,7 +68,7 @@ class ServicioIngrediente:
         self.repositorio.eliminar(unidad_trabajo.sesion, ingrediente)
 
     def _validar_nombre_unico(self, unidad_trabajo: UnidadDeTrabajo, nombre: str, id_ingrediente_actual: int | None = None) -> None:
-        consulta = select(Ingrediente).where(Ingrediente.nombre == nombre)
+        consulta = select(Ingrediente).where(Ingrediente.nombre == nombre).where(Ingrediente.fecha_eliminacion == None)  # noqa: E711
         ingrediente_existente = unidad_trabajo.sesion.exec(consulta).first()
 
         if ingrediente_existente is None:
